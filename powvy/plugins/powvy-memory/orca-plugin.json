@@ -9,7 +9,7 @@
   "pluginApi": 1,
   "main": "main.mjs",
   "contributes": {
-    "panels": [{ "id": "memory", "title": "记忆", "icon": "brain", "entry": "panel.html" }]
+    "panels": [{ "id": "memory", "title": "记忆", "icon": "book", "entry": "panel.html" }]
   },
   "capabilities": [{ "kind": "workspace:read" }]
 }
