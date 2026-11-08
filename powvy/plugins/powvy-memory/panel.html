@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  body { margin: 0; padding: 10px 12px; font: 13px/1.5 system-ui, sans-serif; color: var(--orca-foreground, #ddd); background: var(--orca-background, transparent); }
+  nav { display: flex; gap: 6px; margin-bottom: 10px; }
+  nav button, form button { padding: 4px 10px; border: 1px solid var(--orca-border, #555); border-radius: 6px; background: var(--orca-secondary, #2a2a2a); color: inherit; font: inherit; cursor: pointer; }
+  nav button[aria-pressed="true"] { background: var(--orca-primary, #555); color: var(--orca-primary-foreground, #fff); }
+  form { display: flex; gap: 6px; margin-bottom: 10px; }
+  input { flex: 1; min-width: 0; padding: 4px 8px; border: 1px solid var(--orca-border, #555); border-radius: 6px; background: transparent; color: inherit; font: inherit; }
+  h3 { font-size: 12px; margin: 14px 0 6px; color: var(--orca-muted-foreground, #999); font-weight: 600; }
+  .item { padding: 7px 0; border-bottom: 1px solid var(--orca-border, #333); }
+  .item b { display: block; }
+  .meta { font-size: 11px; color: var(--orca-muted-foreground, #999); }
+  .gap { color: var(--orca-muted-foreground, #999); }
+  pre { white-space: pre-wrap; font: inherit; margin: 4px 0 0; }
+  ul { margin: 4px 0 0 16px; padding: 0; }
+</style>
+</head>
+<body>
+<nav><button id="tProj" aria-pressed="true">这个项目</button><button id="tMe" aria-pressed="false">关于我</button></nav>
+<div id="out"><p class="gap">读取中…</p></div>
+<script>
+'use strict'
+var out = document.getElementById('out'), tab = 'proj'
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] }) }
+function obs(o) { return '<div class="item"><b>' + esc(o.title) + '</b>' + (o.subtitle ? '<div>' + esc(o.subtitle) + '</div>' : '') + (o.facts.length ? '<ul>' + o.facts.slice(0, 5).map(function (f) { return '<li>' + esc(f) + '</li>' }).join('') + '</ul>' : '') + '<div class="meta">#' + o.id + ' · ' + esc(o.type) + ' · ' + esc(o.project || '') + ' · ' + esc((o.at || '').slice(0, 10)) + '</div></div>' }
+function fail(e) { out.innerHTML = '<p class="gap">' + esc(e && e.message || e) + '</p>' }
+function project() {
+  orca.host.call('workspace.readContext').then(function (ctx) {
+    if (!ctx) { out.innerHTML = '<p class="gap">先选中一个工作区。</p>'; return }
+    var path = ctx.displayName
+    out.innerHTML = '<form id="f"><input id="q" placeholder="搜索 Claude Mem" /><button>搜索</button></form><div id="res"><p class="gap">读取 ' + esc(ctx.displayName) + ' 的记忆…</p></div>'
+    document.getElementById('f').onsubmit = function (e) {
+      e.preventDefault(); var q = document.getElementById('q').value.trim(); if (!q) return
+      orca.plugin.request('search', { query: q }).then(function (r) { document.getElementById('res').innerHTML = '<h3>找到 ' + r.observations.length + ' 条</h3>' + r.observations.map(obs).join('') }, fail)
+    }
+    orca.plugin.request('project', { path: path }).then(function (d) {
+      var o = d.mem && d.mem.observations && d.mem.observations.items.length ? d.mem.observations.items : d.related ? d.related.observations : []
+      var res = document.getElementById('res'); if (!res) return
+      res.innerHTML = d.mem && d.mem.error ? '<p class="gap">' + esc(d.mem.error) + '</p>'
+        : '<h3>' + (d.related ? '关键词“' + esc(d.name) + '”匹配 · AI 提取' : '最近的观察 · AI 提取') + '</h3>' + (o.length ? o.slice(0, 15).map(obs).join('') : '<p class="gap">Claude Mem 里还没有这个项目的记录。</p>')
+        + (d.mem.summaries && d.mem.summaries.items.length ? '<h3>会话摘要</h3>' + d.mem.summaries.items.slice(0, 5).map(function (s) { return '<div class="item"><b>' + esc(s.request) + '</b><div>' + esc(s.completed) + '</div><div class="meta">' + esc((s.at || '').slice(0, 10)) + '</div></div>' }).join('') : '')
+    }, fail)
+  }, fail)
+}
+function me() {
+  orca.plugin.request('me').then(function (d) {
+    out.innerHTML = d.error ? '<p class="gap">' + esc(d.error) + '</p>' : '<p class="meta">Obsidian · ' + esc(d.vaultName) + ' / ' + esc(d.folder) + '（只读，在 Obsidian 里编辑）</p>' + d.notes.map(function (n) { return '<div class="item"><b>' + esc(n.name) + '</b><pre>' + esc(n.body) + '</pre></div>' }).join('')
+  }, fail)
+}
+function show(t) { tab = t; document.getElementById('tProj').setAttribute('aria-pressed', String(t === 'proj')); document.getElementById('tMe').setAttribute('aria-pressed', String(t === 'me')); (t === 'proj' ? project : me)() }
+document.getElementById('tProj').onclick = function () { show('proj') }
+document.getElementById('tMe').onclick = function () { show('me') }
+orca.on('workspace.changed', function () { if (tab === 'proj') project() })
+show('proj')
+</script>
+</body>
+</html>

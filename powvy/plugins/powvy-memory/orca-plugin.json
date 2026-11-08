@@ -1,0 +1,15 @@
+{
+  "manifestVersion": 2,
+  "execution": "trusted-worker",
+  "id": "powvy-memory",
+  "name": "Powvy 记忆",
+  "version": "1.0.0",
+  "description": "Claude Mem memories for the focused workspace, memory search, and your Obsidian 关于我 profile. Read-only.",
+  "engines": { "orca": ">=1.4.200" },
+  "pluginApi": 1,
+  "main": "main.mjs",
+  "contributes": {
+    "panels": [{ "id": "memory", "title": "记忆", "icon": "brain", "entry": "panel.html" }]
+  },
+  "capabilities": [{ "kind": "workspace:read" }]
+}
