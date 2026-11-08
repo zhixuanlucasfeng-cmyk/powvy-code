@@ -94,5 +94,7 @@ export function setupAutoUpdater(
   mainWindow: BrowserWindow | null,
   opts?: UpdaterSetupOptions
 ): void {
-  updater.setupAutoUpdater(mainWindow, opts)
+  // Powvy Code fork: updates come from `git pull upstream` and a rebuild, never from Orca's release feed.
+  void mainWindow
+  void opts
 }

@@ -50,6 +50,8 @@ export function _resetMisconfigWarnCacheForTests(): void {
 }
 
 function resolveEnvOverride(): ConsentState | null {
+  // Powvy Code fork: never send telemetry.
+  return { effective: 'disabled', reason: 'orca_disabled' }
   if (isEnvVarTruthy('DO_NOT_TRACK')) {
     return { effective: 'disabled', reason: 'do_not_track' }
   }
